@@ -90,6 +90,257 @@
   display: none !important;
 }
 
+#ds-annotate-chip {
+  all: initial;
+  position: fixed;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid #3a3f4b;
+  border-radius: 6px;
+  background: #171a21;
+  color: #c9cfdd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+#ds-annotate-chip::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4d6bfe;
+}
+
+#ds-annotate-chip:hover {
+  border-color: #4d6bfe;
+  color: #ffffff;
+}
+
+#ds-annotate-chip:focus-visible {
+  outline: 2px solid #4d6bfe;
+  outline-offset: 2px;
+}
+
+#ds-annotate-chip[hidden] {
+  display: none !important;
+}
+
+#ds-annotate-panel {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  overflow: hidden;
+  border: 1px solid #303544;
+  border-radius: 10px;
+  background: #171a21;
+  color: #f4f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+#ds-annotate-panel * {
+  box-sizing: border-box;
+}
+
+#ds-annotate-panel[hidden] {
+  display: none !important;
+}
+
+#ds-annotate-panel .ds-annotate-panel__header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #272b36;
+  color: #f4f5f7;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#ds-annotate-panel .ds-annotate-panel__close {
+  all: initial;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #8b93a7;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ds-annotate-panel .ds-annotate-panel__close:hover {
+  background: #272b36;
+  color: #ffffff;
+}
+
+#ds-annotate-panel .ds-annotate-panel__list {
+  flex: 1;
+  min-height: 0;
+  display: block;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+#ds-annotate-panel .ds-annotate-panel__item {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 22px;
+  gap: 8px;
+  align-items: start;
+  padding: 9px 12px;
+  border-bottom: 1px solid #222630;
+}
+
+#ds-annotate-panel .ds-annotate-panel__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: rgba(77, 107, 254, 0.18);
+  color: #9fb0ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+#ds-annotate-panel .ds-annotate-panel__text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #c9cfdd;
+  font-size: 12px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  word-break: break-word;
+}
+
+#ds-annotate-panel .ds-annotate-panel__remove {
+  all: initial;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #8b93a7;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ds-annotate-panel .ds-annotate-panel__remove:hover {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff8a8a;
+}
+
+#ds-annotate-panel .ds-annotate-panel__footer {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #272b36;
+}
+
+#ds-annotate-panel .ds-annotate-panel__send {
+  all: initial;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: #4d6bfe;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ds-annotate-panel .ds-annotate-panel__send:hover {
+  background: #3f5be0;
+}
+
+#ds-annotate-panel .ds-annotate-panel__clear {
+  all: initial;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #303544;
+  border-radius: 7px;
+  background: transparent;
+  color: #9aa3b8;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#ds-annotate-panel .ds-annotate-panel__clear:hover {
+  border-color: #4d6bfe;
+  color: #ffffff;
+}
+
 @keyframes ds-annotate-pop {
   from {
     opacity: 0;

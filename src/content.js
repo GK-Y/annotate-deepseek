@@ -6,16 +6,33 @@
 
   const BUTTON_ID = "ds-annotate-pill";
   const TOAST_ID = "ds-annotate-toast";
+  const CHIP_ID = "ds-annotate-chip";
+  const PANEL_ID = "ds-annotate-panel";
+  const ANNOTATION_MARKER = "\n\n--- Annotations ---\n";
   const EDITABLE_SELECTOR =
     "textarea, input, [contenteditable='true'], [contenteditable='']";
 
   let button = null;
   let toast = null;
+  let chip = null;
+  let panel = null;
+  let panelList = null;
   let toastTimer = 0;
   let hideToastTimer = 0;
   let lastSelectionText = "";
   let mouseDown = false;
   let suppressUpdateUntil = 0;
+  let annotations = [];
+  let nextAnnotationId = 1;
+  let panelOpen = false;
+  let cachedInput = null;
+  let cachedSendButton = null;
+  let suppressSendInterception = false;
+  let sendingWithAnnotations = false;
+  let positionFrame = 0;
+  let resizeObserver = null;
+  let observedInput = null;
+  let lastUrl = location.href;
 
   function createUi() {
     if (document.getElementById(BUTTON_ID)) return;
@@ -24,13 +41,13 @@
     button.id = BUTTON_ID;
     button.type = "button";
     button.hidden = true;
-    button.setAttribute("aria-label", "Ask DeepSeek about the selected text");
+    button.setAttribute("aria-label", "Add an annotation from the selected text");
     button.innerHTML = `
       <svg class="ds-annotate-pill__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M12 2.75l2.05 5.2 5.2 2.05-5.2 2.05L12 17.25l-2.05-5.2-5.2-2.05 5.2-2.05L12 2.75z" fill="#ffffff"/>
         <path d="M19.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" fill="#ffffff" opacity=".8"/>
       </svg>
-      <span>Ask DeepSeek</span>`;
+      <span>Annotate</span>`;
 
     button.addEventListener("mousedown", (event) => {
       // Keep the page selection alive while the button is pressed.
@@ -45,19 +62,87 @@
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
 
-    (document.body || document.documentElement).append(button, toast);
+    chip = document.createElement("button");
+    chip.id = CHIP_ID;
+    chip.type = "button";
+    chip.hidden = true;
+    chip.setAttribute("aria-haspopup", "dialog");
+    chip.setAttribute("aria-expanded", "false");
+    chip.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    chip.addEventListener("click", onChipClick);
+
+    panel = document.createElement("div");
+    panel.id = PANEL_ID;
+    panel.hidden = true;
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "Annotations");
+    panel.innerHTML = `
+      <div class="ds-annotate-panel__header">
+        <span>Annotations</span>
+        <button class="ds-annotate-panel__close" type="button" aria-label="Close annotations">×</button>
+      </div>
+      <ol class="ds-annotate-panel__list"></ol>
+      <div class="ds-annotate-panel__footer">
+        <button class="ds-annotate-panel__send" type="button">Send with annotations</button>
+        <button class="ds-annotate-panel__clear" type="button">Clear all</button>
+      </div>`;
+
+    panelList = panel.querySelector(".ds-annotate-panel__list");
+    panel
+      .querySelector(".ds-annotate-panel__close")
+      .addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closePanel();
+      });
+    panel
+      .querySelector(".ds-annotate-panel__send")
+      .addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressUpdateUntil = Date.now() + 400;
+        const input = findPromptInput();
+        closePanel();
+        if (input) sendWithAnnotations(input);
+        else showToast("Couldn't find the prompt box.");
+      });
+    panel
+      .querySelector(".ds-annotate-panel__clear")
+      .addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressUpdateUntil = Date.now() + 400;
+        clearAnnotations();
+      });
+
+    (document.body || document.documentElement).append(button, toast, chip, panel);
 
     document.addEventListener("mousedown", onMouseDown, true);
     document.addEventListener("mouseup", onMouseUp, true);
     document.addEventListener("keyup", onKeyUp, true);
     document.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("scroll", hideButton, true);
-    window.addEventListener("resize", hideButton, { passive: true });
+    document.addEventListener("keydown", onSendKeyDown, true);
+    document.addEventListener("click", onSendClick, true);
+    document.addEventListener("input", onDocumentInput, true);
+    window.addEventListener("scroll", onViewportChange, true);
+    window.addEventListener("resize", onViewportChange, { passive: true });
+    window.setInterval(checkUrlChange, 500);
   }
 
   function onMouseDown(event) {
     mouseDown = true;
     if (!button.contains(event.target)) hideButton();
+
+    if (
+      panelOpen &&
+      !chip.contains(event.target) &&
+      !panel.contains(event.target)
+    ) {
+      closePanel();
+    }
   }
 
   function onMouseUp() {
@@ -70,7 +155,31 @@
   }
 
   function onKeyDown(event) {
-    if (event.key === "Escape") hideButton();
+    if (event.key !== "Escape") return;
+    if (panelOpen) closePanel();
+    hideButton();
+  }
+
+  function onDocumentInput() {
+    if (annotations.length) scheduleChipPosition();
+  }
+
+  function onViewportChange() {
+    hideButton();
+    if (annotations.length) scheduleChipPosition();
+  }
+
+  function checkUrlChange() {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      cachedInput = null;
+      cachedSendButton = null;
+      if (annotations.length) clearAnnotations({ silent: true });
+    }
+
+    // Keeps the tag above the prompt box if the page moves it without
+    // firing a resize event.
+    if (annotations.length) scheduleChipPosition();
   }
 
   function updateFromSelection() {
@@ -98,7 +207,9 @@
     if (
       !element ||
       element.closest(EDITABLE_SELECTOR) ||
-      element.closest(`#${BUTTON_ID}, #${TOAST_ID}`)
+      element.closest(
+        `#${BUTTON_ID}, #${TOAST_ID}, #${CHIP_ID}, #${PANEL_ID}`,
+      )
     ) {
       hideButton();
       return;
@@ -150,6 +261,10 @@
 
     const selection = window.getSelection();
     const text = ((selection && selection.toString()) || lastSelectionText).trim();
+    const range =
+      selection && selection.rangeCount > 0
+        ? selection.getRangeAt(0).cloneRange()
+        : null;
 
     hideButton();
     if (!text) return;
@@ -160,9 +275,6 @@
       return;
     }
 
-    insertText(input, text);
-    showToast("Added to the prompt box");
-
     if (selection) {
       try {
         selection.removeAllRanges();
@@ -170,9 +282,530 @@
         // Ignore browsers that do not allow clearing the selection here.
       }
     }
+
+    addAnnotation(text, range, input);
+    showToast(`Annotation ${annotations.length} added`);
+  }
+
+  function addAnnotation(text, range, input) {
+    const annotation = {
+      id: nextAnnotationId++,
+      text,
+      range,
+    };
+
+    annotations.push(annotation);
+    renderAnnotations();
+    scheduleChipPosition();
+
+    if (input) input.focus({ preventScroll: true });
+    return annotation;
+  }
+
+  function renderAnnotations() {
+    if (!chip) return;
+
+    const count = annotations.length;
+    chip.textContent = `Annotations: ${count}`;
+    chip.hidden = count === 0;
+    chip.setAttribute(
+      "aria-expanded",
+      panelOpen && count > 0 ? "true" : "false",
+    );
+
+    if (count === 0) {
+      closePanel();
+      return;
+    }
+
+    if (panelOpen) renderPanel();
+  }
+
+  function onChipClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    suppressUpdateUntil = Date.now() + 400;
+
+    if (!annotations.length) return;
+
+    if (panelOpen) {
+      closePanel();
+      return;
+    }
+
+    panelOpen = true;
+    chip.setAttribute("aria-expanded", "true");
+    renderPanel();
+    panel.hidden = false;
+    scheduleChipPosition();
+  }
+
+  function closePanel() {
+    panelOpen = false;
+    if (panel) panel.hidden = true;
+    if (chip) chip.setAttribute("aria-expanded", "false");
+  }
+
+  function renderPanel() {
+    if (!panelList) return;
+
+    panelList.textContent = "";
+
+    annotations.forEach((annotation, index) => {
+      const item = document.createElement("li");
+      item.className = "ds-annotate-panel__item";
+
+      const number = document.createElement("span");
+      number.className = "ds-annotate-panel__num";
+      number.textContent = String(index + 1);
+
+      const text = document.createElement("span");
+      text.className = "ds-annotate-panel__text";
+      text.textContent = truncate(annotation.text, 180);
+      text.title = annotation.text;
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "ds-annotate-panel__remove";
+      remove.setAttribute("aria-label", `Remove annotation ${index + 1}`);
+      remove.textContent = "×";
+      remove.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressUpdateUntil = Date.now() + 400;
+        removeAnnotation(annotation.id);
+      });
+
+      item.append(number, text, remove);
+      panelList.append(item);
+    });
+  }
+
+  function removeAnnotation(id) {
+    annotations = annotations.filter((annotation) => annotation.id !== id);
+    renderAnnotations();
+
+    if (annotations.length) scheduleChipPosition();
+    else showToast("Annotations cleared");
+  }
+
+  function clearAnnotations(options = {}) {
+    annotations = [];
+    nextAnnotationId = 1;
+    renderAnnotations();
+    closePanel();
+
+    if (!options.silent) showToast("Annotations cleared");
+  }
+
+  function truncate(value, maxLength) {
+    const clean = value.replace(/\s+/g, " ").trim();
+    return clean.length > maxLength
+      ? `${clean.slice(0, maxLength - 1)}…`
+      : clean;
+  }
+
+  function scheduleChipPosition() {
+    if (positionFrame) return;
+
+    positionFrame = window.requestAnimationFrame(() => {
+      positionFrame = 0;
+      positionChip();
+    });
+  }
+
+  function positionChip() {
+    if (!chip || !annotations.length) return;
+
+    chip.hidden = false;
+
+    const input = findPromptInput();
+    if (!input) {
+      chip.hidden = true;
+      closePanel();
+      return;
+    }
+
+    ensureObserved(input);
+
+    const box = findPromptBox(input) || input;
+    const boxRect = box.getBoundingClientRect();
+    if (!boxRect.width || !boxRect.height) {
+      chip.hidden = true;
+      closePanel();
+      return;
+    }
+
+    const chipWidth = chip.offsetWidth;
+    const chipHeight = chip.offsetHeight;
+    const gap = 8;
+    let left = boxRect.left;
+    let top = boxRect.top - chipHeight - gap;
+
+    left = Math.max(gap, Math.min(left, window.innerWidth - chipWidth - gap));
+    top = Math.max(gap, top);
+
+    chip.style.left = `${Math.round(left)}px`;
+    chip.style.top = `${Math.round(top)}px`;
+
+    if (panelOpen) positionPanel();
+  }
+
+  function ensureObserved(input) {
+    if (observedInput === input) return;
+
+    if (resizeObserver) resizeObserver.disconnect();
+    observedInput = input;
+
+    if (typeof ResizeObserver !== "function") return;
+    if (!resizeObserver) {
+      resizeObserver = new ResizeObserver(() => scheduleChipPosition());
+    }
+
+    resizeObserver.observe(input);
+    const box = findPromptBox(input);
+    if (box && box !== input) resizeObserver.observe(box);
+  }
+
+  function findPromptBox(input) {
+    const inputRect = input.getBoundingClientRect();
+    let element = input.parentElement;
+
+    for (
+      let depth = 0;
+      element && depth < 7;
+      depth += 1, element = element.parentElement
+    ) {
+      const rect = element.getBoundingClientRect();
+      if (rect.width < inputRect.width) continue;
+      if (rect.height < inputRect.height + 16) continue;
+      if (rect.width > inputRect.width * 2 + 160) continue;
+      if (rect.height > inputRect.height * 5 + 160) continue;
+
+      const style = window.getComputedStyle(element);
+      const radius = parseFloat(style.borderTopLeftRadius || "0");
+      const background = style.backgroundColor;
+      const hasBackground =
+        background !== "rgba(0, 0, 0, 0)" && background !== "transparent";
+
+      if (radius >= 8 || hasBackground) return element;
+    }
+
+    return input.parentElement;
+  }
+
+  function positionPanel() {
+    if (!panel || panel.hidden || !chip) return;
+
+    const chipRect = chip.getBoundingClientRect();
+    const panelWidth = panel.offsetWidth;
+    const gap = 8;
+    let left = chipRect.left;
+
+    left = Math.max(gap, Math.min(left, window.innerWidth - panelWidth - gap));
+
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.bottom = `${Math.round(
+      window.innerHeight - chipRect.top + gap,
+    )}px`;
+    panel.style.maxHeight = `${Math.max(120, chipRect.top - gap * 2)}px`;
+  }
+
+  function onSendKeyDown(event) {
+    if (suppressSendInterception || sendingWithAnnotations) return;
+    if (!annotations.length) return;
+    if (
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      event.isComposing
+    ) {
+      return;
+    }
+
+    const input = findPromptInput();
+    if (!input) return;
+    if (event.target !== input && !input.contains(event.target)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    sendWithAnnotations(input);
+  }
+
+  function onSendClick(event) {
+    if (suppressSendInterception || sendingWithAnnotations) return;
+    if (!annotations.length) return;
+
+    const input = findPromptInput();
+    if (!input) return;
+
+    const sendButton = findSendButton(input);
+    if (!sendButton || !sendButton.contains(event.target)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    sendWithAnnotations(input);
+  }
+
+  function sendWithAnnotations(input) {
+    if (sendingWithAnnotations) return;
+    sendingWithAnnotations = true;
+
+    const payload = buildAnnotationPayload();
+    const current = getInputText(input);
+    const markerIndex = current.indexOf(ANNOTATION_MARKER);
+    const base = markerIndex === -1 ? current : current.slice(0, markerIndex);
+    const next = base.trim()
+      ? `${base.replace(/\s+$/, "")}${payload}`
+      : payload.replace(/^\n+/, "");
+
+    setInputText(input, next);
+    input.focus({ preventScroll: true });
+
+    window.setTimeout(() => {
+      const sendButton = findSendButton(input);
+      suppressSendInterception = true;
+
+      if (sendButton && !isDisabled(sendButton)) {
+        sendButton.click();
+      } else {
+        triggerSendFallback(input);
+      }
+
+      window.setTimeout(() => {
+        suppressSendInterception = false;
+
+        const stillThere =
+          input.isConnected &&
+          getInputText(input).includes(ANNOTATION_MARKER);
+        if (stillThere) {
+          const retryButton = findSendButton(input);
+          if (retryButton && !isDisabled(retryButton)) {
+            suppressSendInterception = true;
+            retryButton.click();
+            window.setTimeout(() => {
+              suppressSendInterception = false;
+            }, 100);
+          }
+        }
+
+        clearAnnotations({ silent: true });
+        sendingWithAnnotations = false;
+        showToast(
+          stillThere
+            ? "Annotations added to the prompt"
+            : "Sent with annotations",
+        );
+      }, 320);
+    }, 60);
+  }
+
+  function buildAnnotationPayload() {
+    const lines = annotations.map((annotation, index) => {
+      const text = annotation.text
+        .replace(/\r\n/g, "\n")
+        .replace(/\n/g, "\n   ");
+      return `${index + 1}. ${text}`;
+    });
+
+    return `${ANNOTATION_MARKER}${lines.join("\n")}`;
+  }
+
+  function triggerSendFallback(input) {
+    const form = input.closest("form");
+    if (form && typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+      return;
+    }
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        code: "Enter",
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  }
+
+  function findSendButton(input) {
+    if (cachedSendButton && cachedSendButton.isConnected) {
+      return cachedSendButton;
+    }
+
+    const box = findPromptBox(input) || input.parentElement;
+    if (!box) return null;
+
+    const labelled = box.querySelector(
+      'button[type="submit"], [aria-label*="send" i], [title*="send" i]',
+    );
+    if (labelled && isVisible(labelled)) {
+      cachedSendButton = labelled;
+      return labelled;
+    }
+
+    const boxRect = box.getBoundingClientRect();
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (const element of box.querySelectorAll("*")) {
+      if (element === input || element.contains(input)) continue;
+
+      const rect = element.getBoundingClientRect();
+      if (rect.width < 24 || rect.height < 24) continue;
+      if (rect.width > 72 || rect.height > 72) continue;
+      if (rect.right > boxRect.right + 4) continue;
+      if (rect.bottom > boxRect.bottom + 4) continue;
+      if (boxRect.right - rect.right > 96) continue;
+      if (boxRect.bottom - rect.bottom > 96) continue;
+
+      const style = window.getComputedStyle(element);
+      if (
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        style.opacity === "0"
+      ) {
+        continue;
+      }
+
+      const label = `${element.getAttribute("aria-label") || ""} ${
+        element.getAttribute("title") || ""
+      }`;
+      if (/attach|file|upload|paperclip/i.test(label)) continue;
+
+      const background = style.backgroundColor;
+      const hasBackground =
+        background !== "rgba(0, 0, 0, 0)" && background !== "transparent";
+      let score = rect.right;
+
+      if (element.matches('button[type="submit"]')) score += 1000;
+      if (/send/i.test(label)) score += 500;
+      if (hasBackground) score += 200;
+      if (element.matches('button, [role="button"]')) score += 100;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = element;
+      }
+    }
+
+    if (!best) {
+      cachedSendButton = null;
+      return null;
+    }
+
+    const bestStyle = window.getComputedStyle(best);
+    const bestBackground = bestStyle.backgroundColor;
+    const bestHasBackground =
+      bestBackground !== "rgba(0, 0, 0, 0)" &&
+      bestBackground !== "transparent";
+    const bestLabel = `${best.getAttribute("aria-label") || ""} ${
+      best.getAttribute("title") || ""
+    }`;
+    const confident =
+      best.matches('button[type="submit"]') ||
+      /send/i.test(bestLabel) ||
+      bestHasBackground;
+
+    cachedSendButton = confident ? best : null;
+    return cachedSendButton;
+  }
+
+  function isDisabled(element) {
+    return (
+      element.disabled === true ||
+      element.getAttribute("aria-disabled") === "true"
+    );
+  }
+
+  function isVisible(element) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return false;
+
+    const style = window.getComputedStyle(element);
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      style.opacity !== "0"
+    );
+  }
+
+  function getInputText(input) {
+    if (input.tagName === "TEXTAREA" || input.tagName === "INPUT") {
+      return input.value || "";
+    }
+
+    return input.innerText || "";
+  }
+
+  function setInputText(input, value) {
+    if (input.tagName === "TEXTAREA" || input.tagName === "INPUT") {
+      setNativeValue(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+
+      try {
+        input.setSelectionRange(value.length, value.length);
+      } catch (_) {
+        // Some input types do not support selection ranges.
+      }
+      return;
+    }
+
+    setEditableText(input, value);
+  }
+
+  function setNativeValue(element, value) {
+    const prototype =
+      element.tagName === "TEXTAREA"
+        ? HTMLTextAreaElement.prototype
+        : HTMLInputElement.prototype;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(element, value);
+    } else {
+      element.value = value;
+    }
+  }
+
+  function setEditableText(element, value) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let inserted = false;
+    try {
+      inserted = document.execCommand("insertText", false, value);
+    } catch (_) {
+      inserted = false;
+    }
+
+    if (!inserted) {
+      element.textContent = value;
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+      element.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    const endRange = document.createRange();
+    endRange.selectNodeContents(element);
+    endRange.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(endRange);
   }
 
   function findPromptInput() {
+    if (cachedInput && cachedInput.isConnected && isUsable(cachedInput)) {
+      return cachedInput;
+    }
+
     const candidates = [];
 
     const add = (element, bonus) => {
@@ -195,7 +828,8 @@
       if (!best || candidate.score > best.score) best = candidate;
     }
 
-    return best ? best.element : null;
+    cachedInput = best ? best.element : null;
+    return cachedInput;
   }
 
   function isUsable(element) {
@@ -227,74 +861,6 @@
     );
 
     return score;
-  }
-
-  function insertText(input, text) {
-    input.focus({ preventScroll: true });
-
-    if (input.tagName === "TEXTAREA" || input.tagName === "INPUT") {
-      const current = input.value || "";
-      const next = current.trim()
-        ? `${current.replace(/\s+$/, "")}\n\n${text}`
-        : text;
-
-      setNativeValue(input, next);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-
-      try {
-        input.setSelectionRange(next.length, next.length);
-      } catch (_) {
-        // Some input types do not support selection ranges.
-      }
-      return;
-    }
-
-    insertIntoEditable(input, text);
-  }
-
-  function setNativeValue(element, value) {
-    const prototype =
-      element.tagName === "TEXTAREA"
-        ? HTMLTextAreaElement.prototype
-        : HTMLInputElement.prototype;
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
-
-    if (descriptor && descriptor.set) {
-      descriptor.set.call(element, value);
-    } else {
-      element.value = value;
-    }
-  }
-
-  function insertIntoEditable(element, text) {
-    const current = (element.innerText || "").replace(/\s+$/, "");
-    const next = current ? `${current}\n\n${text}` : text;
-    const selection = window.getSelection();
-    const range = document.createRange();
-
-    range.selectNodeContents(element);
-    selection.removeAllRanges();
-    selection.addRange(range);
-
-    let inserted = false;
-    try {
-      inserted = document.execCommand("insertText", false, next);
-    } catch (_) {
-      inserted = false;
-    }
-
-    if (!inserted) {
-      element.textContent = next;
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-      element.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    const endRange = document.createRange();
-    endRange.selectNodeContents(element);
-    endRange.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(endRange);
   }
 
   async function copyToClipboard(text) {

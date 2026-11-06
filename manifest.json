@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Annotate for DeepSeek",
-  "version": "0.1.0",
-  "description": "Highlight text on DeepSeek Chat and drop it into the prompt box with one click.",
+  "version": "1.0.0",
+  "description": "Highlight text on DeepSeek Chat, collect hidden annotations, and attach them to your prompt.",
   "browser_specific_settings": {
     "gecko": {
       "id": "annotate-deepseek@local",
