@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Annotate for DeepSeek icon">
+  <rect width="128" height="128" rx="28" fill="#4d6bfe"/>
+  <path d="M34 35h60a11 11 0 0 1 11 11v31a11 11 0 0 1-11 11H63L44 103V88H34a11 11 0 0 1-11-11V46a11 11 0 0 1 11-11z" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M44 56h40M44 71h25" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <path d="M92 79l2.2 5.8L100 87l-5.8 2.2L92 95l-2.2-5.8L84 87l5.8-2.2L92 79z" fill="#ffe27a"/>
+</svg>

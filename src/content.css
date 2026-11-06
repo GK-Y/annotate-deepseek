@@ -1,0 +1,110 @@
+#ds-annotate-pill {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: #4d6bfe;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: ds-annotate-pop 120ms ease-out;
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+#ds-annotate-pill:hover {
+  background: #3f5be0;
+}
+
+#ds-annotate-pill:active {
+  transform: scale(0.97);
+}
+
+#ds-annotate-pill:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+#ds-annotate-pill[hidden] {
+  display: none !important;
+}
+
+#ds-annotate-pill .ds-annotate-pill__icon {
+  flex: none;
+  display: block;
+}
+
+#ds-annotate-toast {
+  all: initial;
+  position: fixed;
+  z-index: 2147483647;
+  left: 50%;
+  bottom: 24px;
+  box-sizing: border-box;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: #1b1d24;
+  color: #f4f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+#ds-annotate-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#ds-annotate-toast[hidden] {
+  display: none !important;
+}
+
+@keyframes ds-annotate-pop {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ds-annotate-pill,
+  #ds-annotate-toast {
+    animation: none;
+    transition: none;
+  }
+}

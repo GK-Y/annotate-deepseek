@@ -1,0 +1,14 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Build / packaging output
+web-ext-artifacts/
+*.zip
+*.xpi
+
+# Dependencies (not currently used, but harmless)
+node_modules/

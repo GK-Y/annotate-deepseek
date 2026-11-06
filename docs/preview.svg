@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Annotate for DeepSeek preview</title>
+  <desc id="desc">A DeepSeek chat window with a sentence highlighted and a floating Ask DeepSeek button above it. The highlighted sentence appears in the prompt box below.</desc>
+  <defs>
+    <filter id="panelShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="26" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+    <filter id="buttonShadow" x="-30%" y="-40%" width="160%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".5"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="540" fill="#0b0d13"/>
+
+  <g filter="url(#panelShadow)">
+    <rect x="96" y="54" width="768" height="432" rx="18" fill="#14161d" stroke="#272b36"/>
+    <path d="M96 72a18 18 0 0 1 18-18h732a18 18 0 0 1 18 18v26H96V72z" fill="#181b23"/>
+    <line x1="96" y1="98" x2="864" y2="98" stroke="#272b36"/>
+  </g>
+
+  <circle cx="122" cy="76" r="4" fill="#ff6b6b"/>
+  <circle cx="138" cy="76" r="4" fill="#f7c948"/>
+  <circle cx="154" cy="76" r="4" fill="#4ade80"/>
+  <text x="480" y="81" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#8b93a7">chat.deepseek.com</text>
+
+  <g font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <rect x="524" y="126" width="300" height="58" rx="14" fill="#232736"/>
+    <text x="544" y="150" font-size="13" fill="#eef1f8">Can you explain how React</text>
+    <text x="544" y="169" font-size="13" fill="#eef1f8">state works?</text>
+
+    <text x="132" y="226" font-size="13.5" fill="#c9cfdd">React state is the component's memory.</text>
+    <text x="132" y="252" font-size="13.5" fill="#c9cfdd">When state changes, React re-renders.</text>
+
+    <rect x="129" y="268" width="432" height="23" rx="5" fill="#4d6bfe" opacity=".32"/>
+    <text x="132" y="285" font-size="13.5" fill="#ffffff">The input event is how the browser tells React</text>
+    <text x="132" y="311" font-size="13.5" fill="#c9cfdd">that the user typed something.</text>
+
+    <g filter="url(#buttonShadow)">
+      <rect x="500" y="214" width="164" height="38" rx="10" fill="#4d6bfe"/>
+      <path d="M520 227.5l2.2 5.4 5.4 2.2-5.4 2.2-2.2 5.4-2.2-5.4-5.4-2.2 5.4-2.2 2.2-5.4z" fill="#fff"/>
+      <text x="538" y="238" font-size="13" font-weight="600" fill="#fff">Ask DeepSeek</text>
+    </g>
+
+    <path d="M566 252l8 12 4-5 5 3-9-13-8 3z" fill="#d8dcff" opacity=".9"/>
+
+    <rect x="132" y="386" width="696" height="58" rx="14" fill="#1c1f29" stroke="#303544"/>
+    <text x="154" y="412" font-size="12.5" fill="#9aa3b8">The input event is how the browser tells React</text>
+    <text x="154" y="430" font-size="12.5" fill="#9aa3b8">that the user typed something.</text>
+    <circle cx="794" cy="415" r="15" fill="#4d6bfe"/>
+    <path d="M794 421v-11m-4 4l4-4 4 4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="96" y="518" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#6f778b">Select text → click Ask DeepSeek → the text lands in the prompt box.</text>
+</svg>
