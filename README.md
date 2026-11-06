@@ -1,6 +1,6 @@
 # Annotate for DeepSeek
 
-A small Firefox/Zen extension that adds the missing "Ask ChatGPT"-style selection action to DeepSeek Chat: highlight text, click **Annotate**, and it becomes a hidden annotation attached to your prompt.
+A small Firefox/Zen extension that adds the missing "Ask ChatGPT"-style selection action to DeepSeek Chat: highlight text, click **Annotate**, and it becomes a hidden annotation attached to your prompt — powered by DeepSeek V4.1 Flash.
 
 ![Annotate for DeepSeek preview](docs/preview.svg)
 
