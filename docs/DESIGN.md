@@ -123,6 +123,8 @@ Think of React as keeping its own notebook. Setting `.value` only changes the sc
 | Prompt box already has text | New text is appended after two newlines. |
 | Very long selection | Inserted as-is; DeepSeek's own input limit applies. |
 | SPA navigation inside DeepSeek | Content script stays alive; the next selection works normally. |
+| Flatpak file picker exposes only `manifest.json` | Load the packaged zip, not the bare manifest. |
+| Existing DeepSeek tab after install/reload | Refresh the tab so the content script is injected. |
 | DeepSeek changes its DOM | `findPromptInput()` may need new selectors. The `#chat-input` preference is first. |
 
 ## Manual test checklist

@@ -27,11 +27,30 @@ Requires Firefox 142+ or a recent Zen build.
 2. Open `about:debugging#/runtime/this-firefox` in Firefox or Zen.
 3. Click **Load Temporary Add-on…**.
 4. Pick `manifest.json` from this folder.
-5. Open <https://chat.deepseek.com>, select some text, and click **Ask DeepSeek**.
+5. **Refresh any open `chat.deepseek.com` tab** so the content script is injected.
+6. Select some text and click **Ask DeepSeek**.
 
-Temporary add-ons disappear when the browser closes. After changing the code, go back to `about:debugging` and reload the extension.
+Temporary add-ons disappear when the browser closes. After changing the code, reload the extension and refresh the DeepSeek tab.
 
-> There is no build step. The files in this repo are the extension.
+### Flatpak Firefox/Zen: load the zip instead
+
+Flatpak's file picker uses a document portal. If you select `manifest.json`, Firefox may only receive that one file — not `src/`, `icons/`, or `popup/`. The symptoms are a generic add-on icon and no **Ask DeepSeek** button.
+
+Build a zip and load that instead:
+
+```sh
+npx web-ext build --source-dir . --artifacts-dir dist --overwrite-dest
+```
+
+Then choose `dist/annotate_for_deepseek-0.1.0.zip` in **Load Temporary Add-on…**.
+
+> There is no build step for normal development. The files in this repo are the extension; the zip is only for loading through Flatpak portals.
+
+## Troubleshooting
+
+- **Generic add-on icon / nothing happens on highlight:** load the built zip (see above), not the bare `manifest.json`.
+- **Button still missing:** refresh the DeepSeek tab after loading or reloading the extension.
+- **Still missing:** open DevTools (`F12`) → **Console** and check for errors from `content.js`.
 
 ## Development
 

@@ -6,6 +6,7 @@ Thumbs.db
 .vscode/
 
 # Build / packaging output
+dist/
 web-ext-artifacts/
 *.zip
 *.xpi
