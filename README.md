@@ -14,6 +14,7 @@ DeepSeek's web chat does not have the "Ask ChatGPT" selection action that ChatGP
 - Puts the selection straight into DeepSeek's prompt box
 - Keeps an existing draft (appends on a new line)
 - Clipboard fallback if the prompt box cannot be found
+- Toolbar icon with a quick how-to popup
 - No background service, no network calls, no permissions
 - Declares "no data collection" in the Firefox manifest
 - Works in Firefox and Zen
@@ -34,7 +35,7 @@ Temporary add-ons disappear when the browser closes. After changing the code, go
 
 ## Development
 
-Edit `src/content.js` or `src/content.css`, then reload the extension from `about:debugging`.
+Edit `src/content.js` or `src/content.css`, then reload the extension from `about:debugging`. If you change the manifest or icons, reload the temporary add-on there as well.
 
 Optional manifest/lint check (downloads `web-ext` on first run):
 
@@ -60,7 +61,10 @@ More detail, in plain English: [docs/DESIGN.md](docs/DESIGN.md).
 ├── src/
 │   ├── content.js         # Selection button + prompt-box insertion
 │   └── content.css        # Button and toast styles
-├── icons/                 # Extension icons
+├── popup/
+│   ├── popup.html         # Toolbar popup with quick instructions
+│   └── popup.css          # Popup styles
+├── icons/                 # Toolbar/add-on icons (SVG sources + PNG sizes)
 ├── docs/
 │   ├── DESIGN.md          # Simple design doc
 │   └── preview.svg        # README preview illustration

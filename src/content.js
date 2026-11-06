@@ -27,8 +27,8 @@
     button.setAttribute("aria-label", "Ask DeepSeek about the selected text");
     button.innerHTML = `
       <svg class="ds-annotate-pill__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 2.75l2.05 5.2 5.2 2.05-5.2 2.05L12 17.25l-2.05-5.2-5.2-2.05 5.2-2.05L12 2.75z" fill="currentColor"/>
-        <path d="M19.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" fill="currentColor" opacity=".8"/>
+        <path d="M12 2.75l2.05 5.2 5.2 2.05-5.2 2.05L12 17.25l-2.05-5.2-5.2-2.05 5.2-2.05L12 2.75z" fill="#ffffff"/>
+        <path d="M19.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1z" fill="#ffffff" opacity=".8"/>
       </svg>
       <span>Ask DeepSeek</span>`;
 

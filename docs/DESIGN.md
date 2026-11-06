@@ -57,7 +57,7 @@ That last part is the only slightly tricky bit, explained below.
 └─────────────────────────────────────────────────────────────┘
 ```
 
-There is no background script, no service worker, no popup, and no network request.
+There is no background script, no service worker, and no network request. The toolbar popup is static instructions; the actual work happens in the content script.
 
 ## Files
 
@@ -66,7 +66,9 @@ There is no background script, no service worker, no popup, and no network reque
 | `manifest.json` | Tells Firefox the extension name, version, icons, and which site to run on. |
 | `src/content.js` | All behavior: selection detection, button, prompt-box insertion, toast. |
 | `src/content.css` | Styles for the floating button and the small confirmation toast. |
-| `icons/` | Toolbar/add-on icons (SVG source plus PNG sizes). |
+| `popup/popup.html` | Small toolbar popup with quick usage instructions. |
+| `popup/popup.css` | Styles for the toolbar popup. |
+| `icons/` | Toolbar/add-on icons (SVG sources plus PNG sizes). |
 | `docs/DESIGN.md` | This document. |
 | `README.md` | Install steps, features, privacy, limitations. |
 
@@ -75,6 +77,7 @@ There is no background script, no service worker, no popup, and no network reque
 | Decision | Why |
 | --- | --- |
 | Content script only | The task is entirely inside one page. No background process or permissions needed. |
+| Toolbar popup is static | Gives the toolbar icon a useful landing page without adding background logic. |
 | Manifest V3 | Current Firefox/Zen extension format. |
 | Insert, do not auto-send | Safer: you can review or add a question before sending. Auto-send can be an option later. |
 | Append instead of replace | Never destroys an existing draft. |
