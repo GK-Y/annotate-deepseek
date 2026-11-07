@@ -1,14 +1,14 @@
 # Annotate for DeepSeek
 
-A small Firefox/Zen extension that adds the missing "Ask ChatGPT"-style selection action to DeepSeek Chat: highlight text, click **Annotate**, and it becomes a hidden annotation attached to your prompt — powered by DeepSeek V4.1 Flash.
+A small Firefox/Zen extension that adds the missing "Ask ChatGPT"-style selection action to DeepSeek Chat: highlight text, click **Annotate**, ask a question, and attach context plus annotation to your prompt — powered by DeepSeek V4.1 Flash.
 
 ![Annotate for DeepSeek preview](docs/preview.svg)
 
 ## Features
 
-- Highlight text on `chat.deepseek.com` and click **Annotate**.
-- A small `Annotations: N` tag appears above the prompt box; click it to review or remove annotations.
-- Annotations attach to your message when you send — no copy-paste.
+- Highlight text on `chat.deepseek.com`, click **Annotate**, and type your question in the popup.
+- A numbered diamond marks the text; the `Annotations: N` tab pops out of the prompt box and opens the review panel.
+- The send button brightens when annotations exist; sending attaches `context` + `annotation` pairs.
 
 ## Install
 
@@ -31,14 +31,16 @@ Flatpak's file picker can expose only the selected file, so `manifest.json` may 
 npx web-ext build --source-dir . --artifacts-dir dist --overwrite-dest
 ```
 
-Then choose `dist/annotate_for_deepseek-1.0.0.zip` in **Load Temporary Add-on…**.
+Then choose `dist/annotate_for_deepseek-1.1.0.zip` in **Load Temporary Add-on…**.
 
 ## Development
 
 No build step. Edit `src/content.js` or `src/content.css`, reload the extension in `about:debugging`, and refresh the DeepSeek tab.
 
-How it works: the content script stores each selection in memory as an annotation.
-A small `Annotations: N` tag appears above the prompt box; click it to review or remove.
-On send, the annotation text is appended to the message and the tag clears.
-If automatic sending fails, the text stays visible in the prompt so you can send it manually.
+## How it works
+
+**Annotate** opens a small editor; save the highlighted context and your question.
+A numbered diamond marks the text, and the `Annotations: N` tab overlaps the prompt box.
+The send button brightens when annotations exist, even if the prompt is empty.
+On send, each annotation is appended as `context: "..."` and `annotation: "..."`.
 No background script, no permissions, no network.
