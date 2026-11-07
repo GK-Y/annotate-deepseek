@@ -1161,6 +1161,7 @@
     }
 
     const target = best.closest('button, [role="button"]') || best;
+    const targetRect = target.getBoundingClientRect();
     const targetStyle = window.getComputedStyle(target);
     const targetBackground = targetStyle.backgroundColor;
     const targetHasBackground =
@@ -1169,10 +1170,13 @@
     const targetLabel = `${target.getAttribute("aria-label") || ""} ${
       target.getAttribute("title") || ""
     }`;
+    const nearRight = boxRect.right - targetRect.right <= 24;
+    const nearBottom = boxRect.bottom - targetRect.bottom <= 24;
     const confident =
       target.matches('button[type="submit"]') ||
       /send/i.test(targetLabel) ||
-      targetHasBackground;
+      targetHasBackground ||
+      (nearRight && nearBottom && target.matches('button, [role="button"]'));
 
     cachedSendButton = confident ? target : null;
     return cachedSendButton;
